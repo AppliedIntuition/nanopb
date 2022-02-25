@@ -353,7 +353,7 @@ class Enum(ProtoElement):
         self.names = names
 
         # by definition, `names` include this enum's name
-        base_name = Names(names.parts[:-1])
+        base_name = Names(names.parts[-1])
 
         if enum_options.long_names:
             self.values = [(names + x.name, x.number) for x in desc.value]
