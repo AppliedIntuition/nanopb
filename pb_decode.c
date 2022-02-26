@@ -495,8 +495,9 @@ static bool checkreturn decode_static_field(pb_istream_t *stream, pb_wire_type_t
                     field->pData = (char*)field->pData + field->data_size;
                 }
 
-                if (substream.bytes_left != 0)
-                    PB_RETURN_ERROR(stream, "array overflow");
+                if (substream.bytes_left != 0){
+                    return true;
+                }
                 if (!pb_close_string_substream(stream, &substream))
                     return false;
 
@@ -509,7 +510,11 @@ static bool checkreturn decode_static_field(pb_istream_t *stream, pb_wire_type_t
                 field->pData = (char*)field->pField + field->data_size * (*size);
 
                 if ((*size)++ >= field->array_size)
-                    PB_RETURN_ERROR(stream, "array overflow");
+                {
+                    (*size)--;
+                    return true;
+                }
+
 
                 return decode_basic_field(stream, wire_type, field);
             }
