@@ -159,6 +159,15 @@ except NameError:
     openmode_unicode = 'r'
 
 
+def truncate(parts):
+    parts_list = list(parts)
+    for index, part in enumerate(parts_list, start=0):
+        if len("_".join(parts_list)) < 64:
+            parts = tuple(parts_list)
+            return parts
+        else:
+            parts_list[index] = part[0:4]
+
 class Names:
     '''Keeps a set of nested names and formats them to C identifier.'''
     def __init__(self, parts = ()):
@@ -168,17 +177,8 @@ class Names:
             parts = (parts,)
         self.parts = tuple(parts)
 
-    def truncate(self):
-        parts_list = list(self.parts)
-        for index, part in enumerate(parts_list, start=0):
-            if len("_".join(parts_list)) < 64:
-                self.parts = tuple(parts_list)
-                return self
-            else:
-                parts_list[index] = part[0:4]
-
     def __str__(self):
-        return '_'.join(self.parts)
+        return '_'.join(truncate(self.parts))
 
     def __add__(self, other):
         if isinstance(other, strtypes):
@@ -477,7 +477,7 @@ class Field:
     def __init__(self, struct_name, desc, field_options):
         '''desc is FieldDescriptorProto'''
         self.tag = desc.number
-        self.struct_name = struct_name.truncate()
+        self.struct_name = struct_name
         self.union_name = None
         self.name = desc.name
         self.default = None
@@ -621,7 +621,7 @@ class Field:
                     self.enc_size = varint_max_size(self.max_size) + self.max_size
         elif desc.type == FieldD.TYPE_MESSAGE:
             self.pbtype = 'MESSAGE'
-            self.ctype = self.submsgname = names_from_type_name(desc.type_name).truncate()
+            self.ctype = self.submsgname = names_from_type_name(desc.type_name)
             self.enc_size = None # Needs to be filled in after the message type is available
             if field_options.submsg_callback and self.allocation == 'STATIC':
                 self.pbtype = 'MSG_W_CB'
