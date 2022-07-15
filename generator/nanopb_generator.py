@@ -159,6 +159,15 @@ except NameError:
     openmode_unicode = 'r'
 
 
+def truncate(parts):
+    parts_list = list(parts)
+    for index, part in enumerate(parts_list, start=0):
+        if len("_".join(parts_list)) < 64:
+            parts = tuple(parts_list)
+            return parts
+        else:
+            parts_list[index] = part[0:4]
+
 class Names:
     '''Keeps a set of nested names and formats them to C identifier.'''
     def __init__(self, parts = ()):
@@ -169,7 +178,7 @@ class Names:
         self.parts = tuple(parts)
 
     def __str__(self):
-        return '_'.join(self.parts)
+        return '_'.join(truncate(self.parts))
 
     def __add__(self, other):
         if isinstance(other, strtypes):
