@@ -230,9 +230,15 @@ bytes there. For the `string` field type, the length limit is exact.
 
 ## Field callbacks
 
-When a field has dynamic length, nanopb cannot statically allocate
-storage for it. Instead, it allows you to handle the field in whatever
-way you want, using a callback function.
+The easiest way to handle repeated fields is to specify a maximum size for
+them, as shown in the previous section. However, sometimes you need to be
+able to handle arrays with unlimited length, possibly larger than available
+RAM memory.
+
+For these cases, nanopb provides a callback interface. Nanopb core invokes
+the callback function when it gets to the specific field in the message.
+Your code can then handle the field in custom ways, for example decode
+the data piece-by-piece and store to filesystem.
 
 The [pb_callback_t](reference.html#pb-callback-t) structure contains a
 function pointer and a `void` pointer called `arg` you can use for
@@ -335,14 +341,9 @@ alternative, the generator options `callback_function` and
 `callback_datatype` can be used to bind a callback function
 based on its name.
 
-Typically this feature is used by setting
-`callback_datatype` to e.g. `void\*` or other
-data type used for callback state. Then the generator will automatically
-set `callback_function` to
-`MessageName_callback` and produce a prototype for it in
-generated `.pb.h`. By implementing this function in your own
-code, you will receive callbacks for fields without having to separately
-set function pointers.
+Typically this feature is used by setting `callback_datatype` to e.g. `void\*` or even a struct type used to store encoded or decoded data.
+The generator will automatically set `callback_function` to `MessageName_callback` and produce a prototype for it in generated `.pb.h`.
+By implementing this function in your own code, you will receive callbacks for fields without having to separately set function pointers.
 
 If you want to use function name bound callbacks for some fields and
 `pb_callback_t` for other fields, you can call
@@ -577,3 +578,45 @@ error. The most common error conditions are:
 7) Errors that happen in your callback functions.
 8) Running out of memory, i.e. stack overflow.
 9) Invalid field descriptors (would usually mean a bug in the generator).
+
+## Static assertions
+
+Nanopb code uses static assertions to check size of structures at the compile
+time. The `PB_STATIC_ASSERT` macro is defined in `pb.h`. If ISO C11 standard
+is available, the C standard `_Static_assert` keyword is used, otherwise a
+negative sized array definition trick is used.
+
+Common reasons for static assertion errors are:
+
+1. `FIELDINFO_DOES_NOT_FIT_width2` with `width1` or `width2`:
+    Message that is larger than 256 bytes, but nanopb generator does not detect
+    it for some reason. Often resolved by giving all `.proto` files as argument
+    to `nanopb_generator.py` at the same time, to ensure submessage definitions
+    are found. Alternatively `(nanopb).descriptorsize = DS_4` option can be
+    given manually.
+
+2. `FIELDINFO_DOES_NOT_FIT_width4` with `width4`:
+    Message that is larger than 64 kilobytes. There will be a better error
+    message for this in a future nanopb version, but currently it asserts here.
+    The compile time option `PB_FIELD_32BIT` should be specified either on
+    C compiler command line or by editing `pb.h`. This will increase the sizes
+    of integer types used internally in nanopb code.
+
+3. `DOUBLE_MUST_BE_8_BYTES`:
+    Some platforms, most notably AVR, do not support the 64-bit `double` type,
+    only 32-bit `float`. The compile time option `PB_CONVERT_DOUBLE_FLOAT` can
+    be defined to convert between the types automatically. The conversion
+    results in small rounding errors and takes unnecessary space in transmission,
+    so changing the `.proto` to use `float` type is often better.
+
+4.  `INT64_T_WRONG_SIZE`:
+    The `stdint.h` system header is incorrect for the C compiler being used.
+    This can result from erroneous compiler include path.
+    If the compiler actually does not support 64-bit types, the compile time
+    option `PB_WITHOUT_64BIT` can be used.
+
+5.  `variably modified array size`:
+    The compiler used has problems resolving the array-based static assert at
+    compile time. Try setting the compiler to C11 standard mode if possible.
+    If static assertions cannot be made to work on the compiler used, the
+    compile-time option `PB_NO_STATIC_ASSERT` can be specified to turn them off.

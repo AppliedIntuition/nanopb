@@ -6,10 +6,10 @@ required modifications of user applications are explained. Also any
 error indications are included, in order to make it easier to find this
 document.
 
-Nanopb-0.4.6 (to come)
+Nanopb-0.4.6 (2022-05-30)
 -------------------------
 
-### `NANOPB_VERSION` define is now a string
+### NANOPB_VERSION define is now a string
 
 **Changes:** To ease `NANOPB_VERSION` macro usage, the value is directly a string.
 
@@ -17,6 +17,36 @@ Nanopb-0.4.6 (to come)
 you certainly use the `#` preprocessor to convert it as string. You, now,
 only have to call it directly, like this for example:
 `strcpy(myvar, NANOPB_VERSION);`
+
+### FindNanopb.cmake now requires protoc 3.6.0 or newer by default
+
+**Changes:** The default options passing method now uses `--plugin-opt` which
+is supported by protoc 3.6.0 and newer (released in 2018).
+
+**Required actions:** Update `protoc` if needed, or alternatively install
+`grpcio-tools` package from `pip`. If neither is possible, the
+`NANOPB_PROTOC_OLDER_THAN_3_6_0` cmake option can be used to restore the old
+style option passing. Note that it has problems with special characters such
+as `:`.
+
+**Error indications:** "`protoc: Unknown flag: --nanopb_opt`"
+
+### pb.h uses C11 _Static_assert keyword by default
+
+**Rationale:** The nanopb generated headers use static assertions to catch
+errors at compile time. There are several mechanisms to implement this.
+The most widely supported is C11 `_Static_assert` keyword.
+Previously the code used negative size array definition trick, which is
+supported already in C99 but does not work with every compiler and can
+produce confusing error messages.
+
+**Changes:** Now `_Static_assert` is used by default.
+
+**Required actions:** If the keyword is not recognized, set the compiler to
+C11 standard mode if available. If it is not available, define either `PB_C99_STATIC_ASSERT`
+or `PB_NO_STATIC_ASSERT` in `pb.h` or on compiler command line.
+
+**Error indications:** `Undefined identifier _Static_assert`
 
 Nanopb-0.4.4 (2020-11-25)
 -------------------------
