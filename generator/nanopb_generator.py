@@ -231,6 +231,7 @@ def truncate(parts):
             return parts
         else:
             parts_list[index] = part[0:4]
+    return parts
 
 class Names:
     '''Keeps a set of nested names and formats them to C identifier.'''
