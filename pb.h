@@ -55,7 +55,7 @@
 /* Configure static assert mechanism. Instead of changing these, set your
  * compiler to C11 standard mode if possible. */
 /* #define PB_C99_STATIC_ASSERT 1 */
-/* #define PB_NO_STATIC_ASSERT 1 */
+#define PB_NO_STATIC_ASSERT 1
 
 /******************************************************************
  * You usually don't need to change anything below this line.     *
