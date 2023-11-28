@@ -413,7 +413,12 @@ class Enum(ProtoElement):
         self.names = names
 
         # by definition, `names` include this enum's name
+        # This truncation to only take the last part of the enum name is to allow npb structs to be exported as external C types in Simulink, which have a character restriction limit.
+        # However, in some cases like in the osi_lane proto, the truncated enum members could be identical across different enums causing symbol clash issues.
+        # As such, we handle those cases like below explicitly to avoid symbol clashing by renaming these members slightly.
         base_name = Names(names.parts[-1])
+        if str(Names(names.parts[:-1])) == "osi3_Lane_Classification":
+            base_name = "LCT_"
 
         if enum_options.long_names:
             self.values = [(names + x.name, x.number) for x in desc.value]
